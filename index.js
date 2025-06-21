@@ -3,13 +3,12 @@ const bodyParser = require("body-parser");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
-// const fs = require("fs");
+const fs = require("fs");
 
 dotenv.config();
 
-// const cred = fs.readFileSync('./notificationpps-firebase-adminsdk-fbsvc-605ff89b9f.json','utf-8');
-// const serviceAccount = JSON.stringify(JSON.parse(cred));
-const serviceAccount = JSON.parse('./notificationpps-firebase-adminsdk-fbsvc-605ff89b9f.json');
+const cred = fs.readFileSync('./notificationpps-firebase-adminsdk-fbsvc-605ff89b9f.json','utf-8');
+const serviceAccount = JSON.stringify(JSON.parse(cred));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
