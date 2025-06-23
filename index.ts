@@ -9,17 +9,8 @@ import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-// const cred = fs.readFileSync('./notificationpps-firebase-adminsdk-fbsvc-605ff89b9f.json','utf-8');
-// const serviceAccount = JSON.stringify(JSON.parse(cred));
-
-// const serviceAccount = require('notificationpps-firebase-adminsdk-fbsvc-69dcbb76d4.json');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const db = admin.firestore();
-
-app.use(bodyParser.json());
 
 app.use(cors({
   origin: '*',
@@ -40,6 +31,7 @@ const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+
 console.log('✅ Firebase Admin inicializado con el proyecto:', serviceAccount.project_id);
 app.use(bodyParser.json());
 
@@ -66,6 +58,7 @@ async function getPushTokens(filter: {
   return data.map((entry) => entry.token).filter((token) => token);
 }
 
+
 // Send push notification using Firebase Cloud Messaging
 async function sendPushNotification(tokens: string[], title: string, body: string) {
   if (tokens.length === 0) {
@@ -90,96 +83,38 @@ async function sendPushNotification(tokens: string[], title: string, body: strin
 }
 
 
-// Endpoint para enviar una notificación a un usuario específico
-app.post("/notify", async (req, res) => {
-  const { token, title, body } = req.body;
-
-  const message = {
-    notification: {
-      title: title,
-      body: body,
-    },
-    token: token,
-  };
+//  Send notification to a specific user
+app.post('/notify', async (req: Request, res: Response): Promise<void> => {
+  if (!validateRequest(req, ['tokens', 'title', 'body'])) {
+    res.status(400).json({ error: 'Faltan datos en la solicitud.' });
+    return;
+  }
 
   try {
-    const response = await admin.messaging().send(message);
-    res.status(200).send(`Mensaje enviado correctamente: ${response}`);
+    const response = await sendPushNotification(req.body.tokens, req.body.title, req.body.body);
+    res.status(200).json(response);
   } catch (error) {
-    res.status(500).send(`Error al enviar el mensaje: ${error}`);
+    res.status(500).json({ error: 'Error al enviar mensaje.', details: error });
   }
 });
 
-// Endpoint para enviar notificación a todos los empleados de un rol
-app.post("/notify-role", async (req, res) => {
-  const { title, body, role } = req.body;
 
-  try {
-    const employeeTokens : any[] = [];
-    const querySnapshot = await db
-      .collection("users")
-      .where("role", "==", role)
-      .get();
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      if (data.token) {
-        employeeTokens.push(data.token);
-      }
-    });
+//  Send notification to all users with a specific role
+app.post('/notify-role', async (req: Request, res: Response): Promise<void> => {
+  console.log('📩 Datos recibidos en el backend:', req.body); // 🔍 Ver qué está llegando
 
-    if (employeeTokens.length === 0) {
-      return res
-        .status(404)
-        .send("No hay usuarios a los que enviar un mensaje");
-    }
-
-    const message = {
-      notification: {
-        title: title,
-        body: body,
-      },
-      tokens: employeeTokens,
-    };
-
-    const response = await admin.messaging().sendEachForMulticast(message);
-    res.status(200).send(`Mensajes enviados: ${response.successCount}`);
-  } catch (error) {
-    res.status(500).send(`Error al enviar mensaje: ${error}`);
+  if (!validateRequest(req, ['tokens', 'title', 'body'])) {
+    console.error('⚠️ Solicitud inválida:', req.body);
+    res.status(400).json({ error: 'Faltan datos en la solicitud.' });
+    return;
   }
-});
 
-// Endpoint para enviar un mail a un usuario
-app.post("/send-mail", async (req, res) => {
   try {
-    const { aceptacion, nombreUsuario, mail } = req.body;
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.MAIL,
-        pass: process.env.PASSWORD,
-      },
-    });
-
-    let resultado = await transporter.sendMail({
-      from: '"Mi Comanda" <comandaferrero@gmail.com>',
-      to: mail,
-      subject: aceptacion
-        ? "Felicitaciones su cuenta fue aceptada"
-        : "Disculpe pero hemos bloqueado su cuenta",
-      html: `
-      <h1>${aceptacion ? "Felicitaciones " : "Disculpe "} ${nombreUsuario}</h1>
-      <p>Su cuenta fue ${aceptacion ? "aceptada" : "rechazada"}</p>
-      <p>Saludos La Comanda</p>
-      `,
-    });
-    res.json({ ...resultado, seEnvio: true });
-  } catch (e) {
-    res.json({
-      mensaje: "No se pudo enviar el mail",
-      seEnvio: false,
-    });
+    const response = await sendPushNotification(req.body.tokens, req.body.title, req.body.body);
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('❌ Error en Firebase:', error);
+    res.status(500).json({ error: 'Error al enviar mensaje.', details: error });
   }
 });
 
