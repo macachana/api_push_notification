@@ -2,9 +2,9 @@
   "name": "api_push_notification",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.ts"
   },
   "keywords": [],
   "author": "",
