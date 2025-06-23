@@ -11,13 +11,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
     "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
     "nodemailer": "^7.0.3"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/macachana/api_push_notification.git"
@@ -25,5 +26,9 @@
   "bugs": {
     "url": "https://github.com/macachana/api_push_notification/issues"
   },
-  "homepage": "https://github.com/macachana/api_push_notification#readme"
+  "homepage": "https://github.com/macachana/api_push_notification#readme",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/nodemailer": "^6.4.17"
+  }
 }

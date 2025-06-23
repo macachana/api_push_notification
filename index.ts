@@ -1,28 +1,94 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const admin = require("firebase-admin");
-const nodemailer = require("nodemailer");
-const dotenv = require("dotenv");
-const fs = require("fs");
+import express, { Request, Response } from 'express';
+import cors from 'cors'; 
+import bodyParser from 'body-parser';
+import admin from 'firebase-admin';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
 // const cred = fs.readFileSync('./notificationpps-firebase-adminsdk-fbsvc-605ff89b9f.json','utf-8');
 // const serviceAccount = JSON.stringify(JSON.parse(cred));
 
-const serviceAccount = require('notificationpps-firebase-adminsdk-fbsvc-69dcbb76d4.json');
+// const serviceAccount = require('notificationpps-firebase-adminsdk-fbsvc-69dcbb76d4.json');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://notificationpps-default-rtdb.firebaseio.com"
-});
-
 const db = admin.firestore();
 
 app.use(bodyParser.json());
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+//  Initialize Supabase
+const SUPABASE_URL = process.env.DATABASE_URL || '';
+const SUPABASE_KEY = process.env.DATABASE_KEY || '';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+//  Load Firebase credentials
+const serviceAccountPath = process.env.SERVICE_ACCOUNT!;
+const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+
+//  Initialize Firebase
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+console.log('✅ Firebase Admin inicializado con el proyecto:', serviceAccount.project_id);
+app.use(bodyParser.json());
+
+//  Validate if required data exists in the request
+function validateRequest(req: Request, fields: string[]): boolean {
+  return fields.every((field) => req.body[field]);
+}
+
+//  Get push tokens from Supabase (for individual users or by role)
+async function getPushTokens(filter: {
+  field: string;
+  value: string | number;
+}): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('device_tokens') 
+    .select('token')
+    .eq(filter.field, filter.value);
+
+  if (error) {
+    console.error('❌ Error obteniendo tokens:', error.message);
+    return [];
+  }
+
+  return data.map((entry) => entry.token).filter((token) => token);
+}
+
+// Send push notification using Firebase Cloud Messaging
+async function sendPushNotification(tokens: string[], title: string, body: string) {
+  if (tokens.length === 0) {
+    console.warn("No hay tokens disponibles para enviar la notificación.");
+    return { success: false, sentCount: 0 };
+  }
+
+  const message = {
+    notification: { title, body },
+    data: { title, body },
+    tokens,
+  };
+
+  try {
+    const response = await admin.messaging().sendEachForMulticast(message);
+    console.log('📊 Respuesta completa de Firebase:', JSON.stringify(response, null, 2)); // Log detallado
+    return response;
+  } catch (error) {
+    console.error('❌ Error en sendPushNotification de Firebase:', error);
+    throw error; 
+  }
+}
+
 
 // Endpoint para enviar una notificación a un usuario específico
 app.post("/notify", async (req, res) => {
@@ -49,7 +115,7 @@ app.post("/notify-role", async (req, res) => {
   const { title, body, role } = req.body;
 
   try {
-    const employeeTokens = [];
+    const employeeTokens : any[] = [];
     const querySnapshot = await db
       .collection("users")
       .where("role", "==", role)
