@@ -131,3 +131,5 @@ dist
 
 # ignore firebase sdk
 *adminsdk*
+
+notificationpps-firebase-adminsdk-fbsvc-69dcbb76d4.json

@@ -16,5 +16,14 @@
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
     "nodemailer": "^7.0.3"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macachana/api_push_notification.git"
+  },
+  "bugs": {
+    "url": "https://github.com/macachana/api_push_notification/issues"
+  },
+  "homepage": "https://github.com/macachana/api_push_notification#readme"
 }
