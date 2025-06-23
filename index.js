@@ -10,7 +10,7 @@ dotenv.config();
 // const cred = fs.readFileSync('./notificationpps-firebase-adminsdk-fbsvc-605ff89b9f.json','utf-8');
 // const serviceAccount = JSON.stringify(JSON.parse(cred));
 
-const serviceAccount = require('./notificationpps-firebase-adminsdk-fbsvc-69dcbb76d4.json');
+const serviceAccount = require('notificationpps-firebase-adminsdk-fbsvc-69dcbb76d4.json');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
