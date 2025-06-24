@@ -27,6 +27,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const serviceAccountPath = process.env.SERVICE_ACCOUNT!;
 const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
+console.log(serviceAccountPath);
+
 //  Initialize Firebase
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -84,20 +86,37 @@ async function sendPushNotification(tokens: string[], title: string, body: strin
 
 
 //  Send notification to a specific user
-app.post('/notify', async (req: Request, res: Response): Promise<void> => {
-  if (!validateRequest(req, ['tokens', 'title', 'body'])) {
-    res.status(400).json({ error: 'Faltan datos en la solicitud.' });
-    return;
-  }
+// app.post('/notify', async (req: Request, res: Response): Promise<void> => {
+//   if (!validateRequest(req, ['tokens', 'title', 'body'])) {
+//     res.status(400).json({ error: 'Faltan datos en la solicitud.' });
+//     return;
+//   }
+
+//   try {
+//     const response = await sendPushNotification(req.body.tokens, req.body.title, req.body.body);
+//     res.status(200).json(response);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error al enviar mensaje.', details: error });
+//   }
+// });
+app.post("/notify", async (req: Request, res: Response) => {
+  const { token, title, body }: { token: string; title: string; body: string } = req.body;
+
+  const message: admin.messaging.Message = {
+    notification: {
+      title,
+      body,
+    },
+    token,
+  };
 
   try {
-    const response = await sendPushNotification(req.body.tokens, req.body.title, req.body.body);
-    res.status(200).json(response);
+    const response = await admin.messaging().send(message);
+    res.status(200).send(`Mensaje enviado correctamente: ${response}`);
   } catch (error) {
-    res.status(500).json({ error: 'Error al enviar mensaje.', details: error });
+    res.status(500).send(`Error al enviar el mensaje: ${(error as Error).message}`);
   }
 });
-
 
 //  Send notification to all users with a specific role
 app.post('/notify-role', async (req: Request, res: Response): Promise<void> => {
