@@ -107,8 +107,19 @@ app.post("/notify", async (req: Request, res: Response) => {
       title,
       body,
     },
+    data: {
+      title,
+      body
+    },
     token,
   };
+  // const message: admin.messaging.Message = {
+  //   notification: {
+  //     title,
+  //     body,
+  //   },
+  //   token,
+  // };
 
   try {
     const response = await admin.messaging().send(message);
@@ -136,6 +147,46 @@ app.post('/notify-role', async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: 'Error al enviar mensaje.', details: error });
   }
 });
+
+// app.post("/notify-role", async (req: Request, res: Response) => {
+//   const { title, body, role }: { title: string; body: string; role: string } = req.body;
+
+//   try {
+//     const employeeTokens: string[] = [];
+
+//     const querySnapshot = await supabase
+//     .from("tokens")
+//     .select("usuario")
+//     .eq("usuario.tipo", role);
+
+//     querySnapshot.forEach((doc) => {
+//       const data = doc.data() as { token?: string };
+//       if (data.token) {
+//         employeeTokens.push(data.token);
+//       }
+//     });
+
+//     if (employeeTokens.length === 0) {
+//       return res
+//         .status(404)
+//         .send("No hay usuarios a los que enviar un mensaje");
+//     }
+
+//     const message: admin.messaging.MulticastMessage = {
+//       notification: {
+//         title,
+//         body,
+//       },
+//       tokens: employeeTokens,
+//     };
+
+//     const response = await admin.messaging().sendEachForMulticast(message);
+//     res.status(200).send(`Mensajes enviados: ${response.successCount}`);
+//   } catch (error) {
+//     res.status(500).send(`Error al enviar mensaje: ${(error as Error).message}`);
+//   }
+// });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
