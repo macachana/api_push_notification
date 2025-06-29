@@ -108,8 +108,9 @@ app.post("/notify", async (req: Request, res: Response) => {
       body,
     },
     data: {
-      title,
-      body
+      customTitle: title,
+      customBody: body,
+      type: "inApp"
     },
     token,
   };
